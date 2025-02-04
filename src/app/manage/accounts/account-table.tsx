@@ -43,8 +43,11 @@ import {
 import { useSearchParams } from 'next/navigation'
 import AutoPagination from '@/components/auto-pagination'
 import { AccountListResType, AccountType } from '@/schemaValidations/account.schema'
+import { useAccountListQuery, useDeleteAccountMutation } from '@/queries/useAccount'
+import { Switch } from '@/components/ui/switch'
+import { toast } from '@/hooks/use-toast'
 
-type AccountItem = AccountListResType['data'][0]
+type AccountItem = AccountListResType['data']['data'][0]
 
 const AccountTableContext = createContext<{
   setEmployeeIdEdit: (value: number) => void
@@ -60,28 +63,37 @@ const AccountTableContext = createContext<{
 
 export const columns: ColumnDef<AccountType>[] = [
   {
-    accessorKey: 'id',
-    header: 'ID'
+    id: 'index',
+    header: 'STT',
+    cell: ({ row }) => <div>{row.index + 1}</div> // Hiển thị số thứ tự (bắt đầu từ 1)
   },
   {
-    accessorKey: 'avatar',
-    header: 'Avatar',
-    cell: ({ row }) => (
-      <div>
-        <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
-          <AvatarImage src={row.getValue('avatar')} />
-          <AvatarFallback className='rounded-none'>{row.original.FullName}</AvatarFallback>
-        </Avatar>
-      </div>
-    )
+    accessorKey: 'Photo',
+    header: 'Ảnh',
+    cell: ({ row }) => {
+      const serverUrl = 'http://localhost:4000/images/movie/'
+      const photoName = row.getValue('Photo')
+      const fullPhotoUrl = `${serverUrl}${photoName}`
+
+      return (
+        <div>
+          <Avatar className='aspect-square w-[100px] h-[100px] rounded-md overflow-hidden'>
+            {/* Hiển thị ảnh */}
+            <AvatarImage src={fullPhotoUrl} alt={row.original.Photo as string} />
+            {/* Nội dung fallback nếu ảnh không hiển thị */}
+            <AvatarFallback className='rounded-none'>{row.original.FullName}</AvatarFallback>
+          </Avatar>
+        </div>
+      )
+    }
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'FullName',
     header: 'Tên',
-    cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('FullName')}</div>
   },
   {
-    accessorKey: 'email',
+    accessorKey: 'Email',
     header: ({ column }) => {
       return (
         <Button variant='ghost' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -90,8 +102,35 @@ export const columns: ColumnDef<AccountType>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
+    cell: ({ row }) => <div className='lowercase'>{row.getValue('Email')}</div>
   },
+  {
+    accessorKey: 'Gender',
+    header: 'Giới tính',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('Gender')}</div>
+  },
+  {
+    accessorKey: 'Phone',
+    header: 'SDT',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('Phone')}</div>
+  },
+  {
+    accessorKey: 'UserStatus',
+    header: 'Trạng thái',
+    cell: ({ row }) => {
+      const value = row.getValue('UserStatus')
+      return (
+        <div className='flex items-center space-x-2'>
+          <Switch
+            id={`user-status-${row.index}`}
+            checked={value === 'Active'} // Hiển thị bật nếu giá trị là "Active", tắt nếu "UnActive"
+            disabled
+          />
+        </div>
+      )
+    }
+  },
+
   {
     id: 'actions',
     enableHiding: false,
@@ -131,6 +170,20 @@ function AlertDialogDeleteAccount({
   employeeDelete: AccountItem | null
   setEmployeeDelete: (value: AccountItem | null) => void
 }) {
+  const { mutateAsync } = useDeleteAccountMutation()
+  const deleteAccount = async () => {
+    if (employeeDelete) {
+      try {
+        const result = await mutateAsync(employeeDelete.Id)
+        setEmployeeDelete(null)
+        toast({
+          title: result.payload.message
+        })
+      } catch (error) {
+        error
+      }
+    }
+  }
   return (
     <AlertDialog
       open={Boolean(employeeDelete)}
@@ -151,7 +204,7 @@ function AlertDialogDeleteAccount({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deleteAccount}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -166,7 +219,8 @@ export default function AccountTable() {
   // const params = Object.fromEntries(searchParam.entries())
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>()
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null)
-  const data: any[] = []
+  const accountMutationQuery = useAccountListQuery()
+  const data = accountMutationQuery.data?.payload.data.data || []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -213,8 +267,8 @@ export default function AccountTable() {
         <div className='flex items-center py-4'>
           <Input
             placeholder='Filter emails...'
-            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-            onChange={(event) => table.getColumn('email')?.setFilterValue(event.target.value)}
+            value={(table.getColumn('Email')?.getFilterValue() as string) ?? ''}
+            onChange={(event) => table.getColumn('Email')?.setFilterValue(event.target.value)}
             className='max-w-sm'
           />
           <div className='ml-auto flex items-center gap-2'>

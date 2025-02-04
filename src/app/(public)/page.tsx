@@ -1,10 +1,16 @@
-import { AlbumArtwork } from '@/components/album-artwork'
+'use client'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { listenNowAlbums, madeForYouAlbums } from '@/lib/albums'
-import { CirclePlay, HandCoins, Popcorn } from 'lucide-react'
+import { useEventListQuery } from '@/queries/useEvent'
+import { useMovieListQuery } from '@/queries/useMovie'
+import { CirclePlay, HandCoins } from 'lucide-react'
 import Image from 'next/image'
 
 export default function Home() {
+  const movieListQuery = useMovieListQuery()
+  const movie = movieListQuery.data?.payload.data.data || []
+  const eventListQuery = useEventListQuery()
+  const event = eventListQuery.data?.payload.data.data || []
+
   return (
     <div className='w-full space-y-4'>
       <div className='relative'>
@@ -31,14 +37,14 @@ export default function Home() {
         </div>
 
         <div className='grid grid-cols-4 gap-4'>
-          {listenNowAlbums.map((album) => (
-            <div key={album.name} className='flex flex-col items-center space-y-2 w-[250px]'>
+          {movie.map((movie) => (
+            <div key={movie.Id} className='flex flex-col items-center space-y-2 w-[250px]'>
               {/* Vùng chứa ảnh và lớp phủ */}
               <div className='relative group w-full h-[330px]'>
                 {/* Ảnh */}
                 <Image
-                  src={album.cover}
-                  alt={album.name}
+                  src={`http://localhost:4000/images/movie/${movie.Photo}`}
+                  alt={movie.NameEN}
                   width={250}
                   height={330}
                   className='rounded-md object-cover w-full h-full'
@@ -60,8 +66,8 @@ export default function Home() {
 
               {/* Thông tin bên dưới ảnh */}
               <div className='space-y-1 text-center'>
-                <h3 className='font-medium leading-none'>{album.name}</h3>
-                <p className='text-xs text-muted-foreground'>{album.artist}</p>
+                <h3 className='font-medium leading-none'>{movie.NameEN}</h3>
+                <p className='text-xs text-muted-foreground'>{movie.NameVN}</p>
               </div>
             </div>
           ))}
@@ -74,16 +80,25 @@ export default function Home() {
         </div>
         <div className='relative'>
           <ScrollArea>
-            <div className='flex space-x-20 pb-4'>
-              {madeForYouAlbums.map((album) => (
-                <AlbumArtwork
-                  key={album.name}
-                  album={album}
-                  className='w-[150px]'
-                  aspectRatio='square'
-                  width={150}
-                  height={150}
-                />
+            <div className='flex space-x-4 pb-4'>
+              {event.map((events) => (
+                <div key={events.Id} className='flex flex-col items-center space-y-2 w-[150px] mr-10 cursor-pointer'>
+                  {/* Hình ảnh */}
+                  <div className='w-[150px] h-[150px] overflow-hidden rounded-md'>
+                    <Image
+                      src={`http://localhost:4000/images/movie/${events.Photo}`}
+                      alt={events.Title}
+                      className='w-full h-full object-cover'
+                      width={150}
+                      height={150}
+                    />
+                  </div>
+                  {/* Nội dung */}
+                  <div className='space-y-1 text-center'>
+                    <h3 className='font-medium leading-none'>{events.Title}</h3>
+                    <p className='text-xs text-muted-foreground'>{events.Author}</p>
+                  </div>
+                </div>
               ))}
             </div>
             <ScrollBar orientation='horizontal' />

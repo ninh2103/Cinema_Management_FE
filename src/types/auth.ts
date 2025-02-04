@@ -5,7 +5,7 @@ export interface LoginBody {
   email: string
 }
 export const AuthRes = z.object({
-  result: z.object({
+  data: z.object({
     access_token: z.string(),
     refresh_token: z.string()
   }),

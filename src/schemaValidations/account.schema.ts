@@ -1,4 +1,5 @@
 import { Role } from '@/constants/type'
+
 import z from 'zod'
 
 // Schema Account theo Prisma
@@ -8,6 +9,10 @@ export const AccountSchema = z.object({
   Email: z.string().email(), // Email tài khoản
   Role: z.enum([Role.Owner, Role.Employee]), // Vai trò của tài khoản
   Photo: z.string().nullable().optional(), // Avatar có thể null hoặc không có
+  Birthday: z.date(),
+  Gender: z.string(),
+  Phone: z.string().optional(),
+  UserStatus: z.string(),
   CreatedAt: z.date(), // Ngày tạo tài khoản
   UpdatedAt: z.date() // Ngày cập nhật tài khoản
 })
@@ -16,21 +21,28 @@ export type AccountType = z.TypeOf<typeof AccountSchema>
 
 // Phản hồi khi lấy danh sách tài khoản
 export const AccountListRes = z.object({
-  data: z.array(AccountSchema), // Danh sách tài khoản
+  data: AccountSchema, // Danh sách tài khoản
   message: z.string() // Thông điệp trả về
 })
 
-export type AccountListResType = z.TypeOf<typeof AccountListRes>
+export type AccountResType = z.TypeOf<typeof AccountListRes>
 
 // Phản hồi khi lấy thông tin tài khoản
 export const AccountRes = z
   .object({
-    data: AccountSchema, // Dữ liệu tài khoản
-    message: z.string() // Thông điệp trả về
+    data: z.object({
+      data: z.array(AccountSchema), // List of movie objects
+      meta: z.object({
+        totalItems: z.number(),
+        currentPage: z.number(),
+        itemsPerPage: z.number(),
+        totalPages: z.number()
+      })
+    })
   })
   .strict()
 
-export type AccountResType = z.TypeOf<typeof AccountRes>
+export type AccountListResType = z.TypeOf<typeof AccountRes>
 
 // Schema tạo tài khoản nhân viên mới
 export const CreateEmployeeAccountBody = z
@@ -38,7 +50,10 @@ export const CreateEmployeeAccountBody = z
     FullName: z.string().trim().min(2).max(256), // Tên tài khoản
     Email: z.string().email(), // Email tài khoản
     Photo: z.string().url().optional(), // Avatar (optional)
-    Password: z.string().min(6).max(100) // Mật khẩu
+    Password: z.string().min(6).max(100), // Mật khẩu
+    Birthday: z.date(),
+    Gender: z.string(),
+    Phone: z.string().optional()
   })
   .strict()
 // .superRefine(({ confirmPassword, password }, ctx) => {
@@ -60,7 +75,10 @@ export const UpdateEmployeeAccountBody = z
     Email: z.string().email(), // Email tài khoản
     Photo: z.string().url().optional(), // Avatar (optional)
     Password: z.string().min(6).max(100).optional(), // Mật khẩu (optional)
-    Role: z.enum([Role.Owner, Role.Employee]).optional().default(Role.Employee) // Vai trò của tài khoản (optional)
+    Birthday: z.date(),
+    Gender: z.string(),
+    Phone: z.string(),
+    UserStatus: z.string()
   })
   .strict()
 // .superRefine(({ confirmPassword, password, changePassword }, ctx) => {
@@ -112,3 +130,20 @@ export type UpdateMeBodyType = z.TypeOf<typeof UpdateMeBody>
 //   })
 
 // export type ChangePasswordBodyType = z.TypeOf<typeof ChangePasswordBody>
+
+export const MeSchema = z.object({
+  UserId: z.string(), // Sử dụng kiểu dữ liệu `number` cho id, phù hợp với Prisma `Int`
+  FullName: z.string(), // Tên tài khoản
+  Username: z.string(), // Tên tài khoản
+  Role: z.enum([Role.Owner, Role.Employee]), // Vai trò của tài khoản
+  Photo: z.string().nullable().optional() // Avatar có thể null hoặc không có
+})
+
+export const MeListType = z.object({
+  data: z.object({
+    data: MeSchema, // Danh sách tài khoản
+    message: z.string() // Thông điệp trả về
+  })
+})
+
+export type MeResType = z.TypeOf<typeof MeListType>

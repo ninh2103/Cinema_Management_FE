@@ -7,15 +7,64 @@ import { useForm } from 'react-hook-form'
 import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema'
+import { useAppStore } from '@/components/app-provider'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { useLoginMutation } from '@/queries/useAuth'
+import { toast } from '@/hooks/use-toast'
 
 export default function LoginForm() {
+  const loginMutation = useLoginMutation()
+  const searchParams = useSearchParams()
+  const clearToken = searchParams.get('clearTokens')
+  const setRole = useAppStore((state) => state.setRole)
+  const router = useRouter()
+  useEffect(() => {
+    if (clearToken) {
+      setRole()
+    }
+  }, [clearToken, setRole])
+
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
     defaultValues: {
-      email: '',
-      password: ''
+      Email: '',
+      Password: ''
     }
   })
+
+  const onSubmit = async (data: LoginBodyType) => {
+    if (loginMutation.isLoading) return
+    try {
+      const result = await loginMutation.mutateAsync(data)
+      const userRole = result.payload.data.user.role.Name
+
+      toast({
+        description: result.payload.message
+      })
+
+      // Gán role vào store hoặc trạng thái
+      setRole(userRole)
+
+      // Điều hướng dựa trên vai trò của người dùng
+      // if (userRole === 'Customer') {
+      //   router.push('/') // Trang dành cho khách hàng
+      // } else if (userRole === 'Employee') {
+      //   router.push('/manage/accounts') // Trang dành cho nhân viên
+      // } else if (userRole === 'Owner') {
+      //   router.push('/manage/dashboard') // Trang dành cho quản lý
+      // } else {
+      //   toast({
+      //     description: 'Role không xác định, vui lòng liên hệ quản trị viên!'
+      //   })
+      // }
+    } catch (error: any) {
+      console.error('Login error:', error)
+      toast({
+        description: 'Đăng nhập thất bại, vui lòng thử lại!'
+      })
+    }
+  }
 
   return (
     <Card className='mx-auto max-w-sm'>
@@ -25,11 +74,17 @@ export default function LoginForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form className='space-y-2 max-w-[600px] flex-shrink-0 w-full' noValidate>
+          <form
+            className='space-y-2 max-w-[600px] flex-shrink-0 w-full'
+            noValidate
+            onSubmit={form.handleSubmit(onSubmit, (err) => {
+              console.log(err)
+            })}
+          >
             <div className='grid gap-4'>
               <FormField
                 control={form.control}
-                name='email'
+                name='Email'
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid gap-2'>
@@ -42,7 +97,7 @@ export default function LoginForm() {
               />
               <FormField
                 control={form.control}
-                name='password'
+                name='Password'
                 render={({ field }) => (
                   <FormItem>
                     <div className='grid gap-2'>

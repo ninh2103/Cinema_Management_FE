@@ -6,7 +6,8 @@ import {
   setAccessTokenToLocalStorage,
   setRefreshTokenToLocalStorage
 } from '@/lib/utils'
-import { LoginResType } from '@/types/auth'
+import { LoginResType } from '@/schemaValidations/auth.schema'
+import { redirect } from 'next/navigation'
 
 type CustomOptions = Omit<RequestInit, 'method'> & {
   baseUrl?: string | undefined
@@ -48,9 +49,8 @@ export class EntityError extends HttpError {
 
 let clientLogoutRequest: null | Promise<any> = null
 export const isClient = typeof window !== 'undefined'
-
 const request = async <Response>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   url: string,
   options?: CustomOptions | undefined
 ) => {
@@ -74,8 +74,11 @@ const request = async <Response>(
       baseHeaders.Authorization = `Bearer ${accessToken}`
     }
   }
+  // Nếu không truyền baseUrl (hoặc baseUrl = undefined) thì lấy từ envConfig.NEXT_PUBLIC_API_ENDPOINT
+  // Nếu truyền baseUrl thì lấy giá trị truyền vào, truyền vào '' thì đồng nghĩa với việc chúng ta gọi API đến Next.js Server
 
   const baseUrl = options?.baseUrl === undefined ? envConfig.NEXT_PUBLIC_API_ENPOINT : options.baseUrl
+
   const fullUrl = `${baseUrl}/${normalizePath(url)}`
 
   const res = await fetch(fullUrl, {
@@ -93,8 +96,7 @@ const request = async <Response>(
     status: res.status,
     payload
   }
-
-  // Xử lý lỗi từ API (Http Interceptor)
+  // Interceptor là nời chúng ta xử lý request và response trước khi trả về cho phía component
   if (!res.ok) {
     if (res.status === ENTITY_ERROR_STATUS) {
       throw new EntityError(
@@ -104,50 +106,51 @@ const request = async <Response>(
         }
       )
     } else if (res.status === AUTHENTICATION_ERROR_STATUS) {
-      // Xử lý logout khi lỗi xác thực
       if (isClient) {
-        if (!clientLogoutRequest) {
-          clientLogoutRequest = fetch(`${envConfig.NEXT_PUBLIC_API_ENPOINT}/users/logout`, {
-            method: 'POST',
-            body: null,
-            headers: {
-              ...baseHeaders
-            } as any
-          })
-          try {
-            await clientLogoutRequest
-          } catch (error) {
-          } finally {
-            removeTokensFromLocalStorage()
-            clientLogoutRequest = null
-            location.href = '/login' // Điều hướng người dùng tới trang đăng nhập sau khi logout
-          }
-        }
+        // if (!clientLogoutRequest) {
+        //   clientLogoutRequest = fetch('/api/auth/logout', {
+        //     method: 'POST',
+        //     body: null,
+        //     headers: {
+        //       ...baseHeaders
+        //     } as any
+        //   })
+        //   try {
+        //     await clientLogoutRequest
+        //   } catch (error) {
+        //   } finally {
+        //     removeTokensFromLocalStorage()
+        //     clientLogoutRequest = null
+        //     location.href = '/login'
+        //   }
+        // }
+      } else {
+        const access_token = (options?.headers as any)?.Authorization.split('Bearer ')[1]
+        redirect(`/logout?accessToken=${access_token}`)
       }
     } else {
       throw new HttpError(data)
     }
   }
-
-  // Xử lý login và lưu token từ phía client (browser)
+  // Đảm bảo logic dưới đây chỉ chạy ở phía client (browser)
   if (isClient) {
     const normalizeUrl = normalizePath(url)
-    if (normalizeUrl === '/login') {
-      const { access_token, refresh_token } = (payload as LoginResType).result
+    if (['api/auth/login'].includes(normalizeUrl)) {
+      const { access_token, refresh_token } = (payload as LoginResType).data
       setRefreshTokenToLocalStorage(refresh_token)
       setAccessTokenToLocalStorage(access_token)
-    } else if (normalizeUrl === '/token') {
+    } else if ('api/auth/token' === normalizeUrl) {
       const { access_token, refresh_token } = payload as {
         access_token: string
         refresh_token: string
       }
       setAccessTokenToLocalStorage(access_token)
       setRefreshTokenToLocalStorage(refresh_token)
-    } else if (normalizeUrl === '/logout') {
+    }
+    if (['api/auth/logout'].includes(normalizeUrl)) {
       removeTokensFromLocalStorage()
     }
   }
-
   return data
 }
 
@@ -158,8 +161,8 @@ const http = {
   post<Response>(url: string, body: any, options?: Omit<CustomOptions, 'body'> | undefined) {
     return request<Response>('POST', url, { ...options, body })
   },
-  put<Response>(url: string, body: any, options?: Omit<CustomOptions, 'body'> | undefined) {
-    return request<Response>('PUT', url, { ...options, body })
+  patch<Response>(url: string, body: any, options?: Omit<CustomOptions, 'body'> | undefined) {
+    return request<Response>('PATCH', url, { ...options, body })
   },
   delete<Response>(url: string, options?: Omit<CustomOptions, 'body'> | undefined) {
     return request<Response>('DELETE', url, { ...options })

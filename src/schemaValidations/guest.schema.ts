@@ -1,5 +1,5 @@
 // import { Role } from '@/constants/type'
-// import z from 'zod'
+import z from 'zod'
 
 // export const GuestLoginBody = z
 //   .object({
@@ -29,14 +29,7 @@
 
 // export type GuestLoginResType = z.TypeOf<typeof GuestLoginRes>
 
-// export const GuestCreateOrdersBody = z.array(
-//   z.object({
-//     dishId: z.number(),
-//     quantity: z.number()
-//   })
-// )
-
-// export type GuestCreateOrdersBodyType = z.TypeOf<typeof GuestCreateOrdersBody>
+// //
 
 // export const GuestCreateOrdersRes = z.object({
 //   message: z.string(),
@@ -48,3 +41,11 @@
 // export const GuestGetOrdersRes = GuestCreateOrdersRes
 
 // export type GuestGetOrdersResType = z.TypeOf<typeof GuestGetOrdersRes>
+export const GuestCreateOrdersBody = z.array(
+  z.object({
+    snackId: z.number(),
+    quantity: z.number()
+  })
+)
+
+export type GuestCreateOrdersBodyType = z.TypeOf<typeof GuestCreateOrdersBody>

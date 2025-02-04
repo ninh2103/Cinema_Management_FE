@@ -1,7 +1,7 @@
 import z from 'zod'
 
 export const CinemaroomSchema = z.object({
-  Id: z.string(), // Mã phòng chiếu
+  Id: z.number(), // Mã phòng chiếu
   Name: z.string(), // Tên phòng chiếu
   Type: z.number(), // Loại phòng chiếu
   Block: z.number(), // Tình trạng phòng chiếu
@@ -19,22 +19,22 @@ export const CinemaroomRes = z.object({
 export type CinemaroomResType = z.TypeOf<typeof CinemaroomRes>
 
 export const CinemaroomListRes = z.object({
-  data: z.array(CinemaroomSchema), // Danh sách phòng chiếu
-  message: z.string(), // Thông điệp trả về
-  meta: z.object({
-    totalItems: z.number(), // Tổng số phòng chiếu
-    currentPage: z.number(), // Trang hiện tại
-    itemsPerPage: z.number(), // Số lượng phòng chiếu trên mỗi trang
-    totalPages: z.number() // Tổng số trang
-  })
+  data: z.object({
+    data: z.array(CinemaroomSchema), // List of movie objects
+    meta: z.object({
+      totalItems: z.number(),
+      currentPage: z.number(),
+      itemsPerPage: z.number(),
+      totalPages: z.number()
+    })
+  }),
+  message: z.string()
 })
 
 export type CinemaroomListResType = z.TypeOf<typeof CinemaroomListRes>
 
 export const CreateCinemaroomBody = z.object({
-  Name: z.string(), // Tên phòng chiếu
-  Type: z.number(), // Loại phòng chiếu
-  Block: z.number() // Tình trạng phòng chiếu
+  Name: z.string() // Tên phòng chiếu
 })
 
 export type CreateCinemaroomBodyType = z.TypeOf<typeof CreateCinemaroomBody>

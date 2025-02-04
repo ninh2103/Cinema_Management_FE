@@ -4,6 +4,7 @@ import { UseFormSetError } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
 import jwt from 'jsonwebtoken'
 import { TokenPayload } from '@/types/jwt.types'
+import { SnackResType } from '@/schemaValidations/snack.schema'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -71,4 +72,17 @@ export function removeAccents(str: string) {
 }
 export const simpleMatchText = (fullText: string, matchText: string) => {
   return removeAccents(fullText.toLowerCase()).includes(removeAccents(matchText.trim().toLowerCase()))
+}
+export const TypeCinemaRoom = {
+  Standard: 0, // Không hoạt động
+  VIP: 1, // Đang hoạt động
+  IMAX: 2 // Ẩn
+} as const
+
+export const CinemaTypeRoomValue = [TypeCinemaRoom.Standard, TypeCinemaRoom.VIP, TypeCinemaRoom.IMAX] as const
+export const formatCurrency = (number: number) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(number)
 }

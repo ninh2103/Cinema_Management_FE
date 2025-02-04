@@ -9,7 +9,8 @@ import {
   Clock9,
   School,
   Ticket,
-  Tag
+  Tag,
+  CalendarCheck
 } from 'lucide-react'
 
 const menuItems = [
@@ -27,18 +28,18 @@ const menuItems = [
   {
     title: 'Suất chiếu',
     Icon: Clock9,
-    href: '/manage/showtiem'
+    href: '/manage/showtimes'
   },
   {
     title: 'Món ăn',
     Icon: Salad,
-    href: '/manage/dishes'
+    href: '/manage/foods'
   },
 
   {
     title: 'Phòng chiếu',
     Icon: School,
-    href: '/manage/room'
+    href: '/manage/rooms'
   },
   {
     title: 'Nhân viên',
@@ -48,12 +49,17 @@ const menuItems = [
   {
     title: 'Vé',
     Icon: Ticket,
-    href: '/manage/ticket'
+    href: '/manage/tickets'
+  },
+  {
+    title: 'Sự kiện',
+    Icon: CalendarCheck,
+    href: '/manage/event'
   },
   {
     title: 'Khuyến mãi',
     Icon: Tag,
-    href: '/manage/promotion'
+    href: '/manage/promotions'
   }
 ]
 

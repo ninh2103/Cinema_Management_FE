@@ -43,6 +43,8 @@ import AutoPagination from '@/components/auto-pagination'
 import { MovieListResType, MovieSchemaType } from '@/schemaValidations/movie.schema'
 import AddMovie from '@/app/manage/movies/add-movie'
 import EditMovie from '@/app/manage/movies/edit-movie'
+import { useDeleteMovieMutation, useMovieListQuery } from '@/queries/useMovie'
+import { toast } from '@/hooks/use-toast'
 
 type MovieItem = MovieListResType['data']['data'][0]
 
@@ -60,37 +62,50 @@ const MovieTableContext = createContext<{
 
 export const columns: ColumnDef<MovieSchemaType>[] = [
   {
-    accessorKey: 'id',
-    header: 'ID'
+    id: 'index',
+    header: 'STT',
+    cell: ({ row }) => <div>{row.index + 1}</div> // Hiển thị số thứ tự (bắt đầu từ 1)
   },
   {
-    accessorKey: 'avatar',
-    header: 'Avatar',
-    cell: ({ row }) => (
-      <div>
-        <Avatar className='aspect-square w-[100px] h-[100px] rounded-md object-cover'>
-          <AvatarImage src={row.getValue('avatar')} />
-          <AvatarFallback className='rounded-none'>{row.original.NameVN}</AvatarFallback>
-        </Avatar>
-      </div>
-    )
-  },
-  {
-    accessorKey: 'name',
-    header: 'Tên',
-    cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
-  },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => {
+    accessorKey: 'Photo',
+    header: 'Ảnh',
+    cell: ({ row }) => {
+      const serverUrl = 'http://localhost:4000/images/movie/'
+      const photoName = row.getValue('Photo')
+      const fullPhotoUrl = `${serverUrl}${photoName}`
+
       return (
-        <Button variant='ghost' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Email
-          <CaretSortIcon className='ml-2 h-4 w-4' />
-        </Button>
+        <div>
+          <Avatar className='aspect-square w-[100px] h-[100px] rounded-md overflow-hidden'>
+            {/* Hiển thị ảnh */}
+            <AvatarImage src={fullPhotoUrl} alt={row.original.NameVN} />
+            {/* Nội dung fallback nếu ảnh không hiển thị */}
+            <AvatarFallback className='rounded-none'>{row.original.NameVN}</AvatarFallback>
+          </Avatar>
+        </div>
       )
-    },
-    cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
+    }
+  },
+
+  {
+    accessorKey: 'NameVN',
+    header: 'Tên phim',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('NameVN')}</div>
+  },
+  {
+    accessorKey: 'Directors',
+    header: 'Đạo diễn',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('Directors')}</div>
+  },
+  {
+    accessorKey: 'Detail',
+    header: 'Chi tiết phim',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('Detail')}</div>
+  },
+  {
+    accessorKey: 'Status',
+    header: 'Trạng thái',
+    cell: ({ row }) => <div className='capitalize'>{row.getValue('Status')}</div>
   },
   {
     id: 'actions',
@@ -98,7 +113,7 @@ export const columns: ColumnDef<MovieSchemaType>[] = [
     cell: function Actions({ row }) {
       const { setMovieIdEdit, setMovieDelete } = useContext(MovieTableContext)
       const openEditMovie = () => {
-        setMovieIdEdit(Number(row.original.Id))
+        setMovieIdEdit(row.original.Id)
       }
 
       const openDeleteMovie = () => {
@@ -131,6 +146,20 @@ function AlertDialogDeleteMovie({
   movieDelete: MovieItem | null
   setMovieDelete: (value: MovieItem | null) => void
 }) {
+  const { mutateAsync } = useDeleteMovieMutation()
+  const deleteMovie = async () => {
+    if (movieDelete) {
+      try {
+        const result = await mutateAsync(movieDelete.Id)
+        setMovieDelete(null)
+        toast({
+          title: result.payload.message
+        })
+      } catch (error) {
+        error
+      }
+    }
+  }
   return (
     <AlertDialog
       open={Boolean(movieDelete)}
@@ -142,15 +171,15 @@ function AlertDialogDeleteMovie({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Xóa nhân viên?</AlertDialogTitle>
+          <AlertDialogTitle>Xóa phim?</AlertDialogTitle>
           <AlertDialogDescription>
-            Tài khoản <span className='bg-foreground text-primary-foreground rounded px-1'>{movieDelete?.NameVN}</span>{' '}
-            sẽ bị xóa vĩnh viễn
+            Phim <span className='bg-foreground text-primary-foreground rounded px-1'>{movieDelete?.NameVN}</span> sẽ bị
+            xóa vĩnh viễn
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={deleteMovie}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -165,7 +194,8 @@ export default function MovieTable() {
   // const params = Object.fromEntries(searchParam.entries())
   const [movieIdEdit, setMovieIdEdit] = useState<number | undefined>()
   const [movieDelete, setMovieDelete] = useState<MovieItem | null>(null)
-  const data: any[] = []
+  const movieMutation = useMovieListQuery()
+  const data = movieMutation.data?.payload.data.data || []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -210,12 +240,12 @@ export default function MovieTable() {
         <EditMovie id={movieIdEdit} setId={setMovieIdEdit} onSubmitSuccess={() => {}} />
         <AlertDialogDeleteMovie movieDelete={movieDelete} setMovieDelete={setMovieDelete} />
         <div className='flex items-center py-4'>
-          <Input
+          {/* <Input
             placeholder='Filter emails...'
-            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-            onChange={(event) => table.getColumn('email')?.setFilterValue(event.target.value)}
+            value={(table.getColumn('Rating')?.getFilterValue() as string) ?? ''}
+            onChange={(event) => table.getColumn('Rating')?.setFilterValue(event.target.value)}
             className='max-w-sm'
-          />
+          /> */}
           <div className='ml-auto flex items-center gap-2'>
             <AddMovie />
           </div>

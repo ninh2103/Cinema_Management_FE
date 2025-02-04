@@ -8,10 +8,10 @@ export const TokenType = {
 export const Role = {
   Owner: 'Owner',
   Employee: 'Employee',
-  Guest: 'Guest'
+  Customer: 'Customer'
 } as const
 
-export const RoleValues = [Role.Owner, Role.Employee, Role.Guest] as const
+export const RoleValues = [Role.Owner, Role.Employee, Role.Customer] as const
 
 export const DishStatus = {
   Available: 'Available',

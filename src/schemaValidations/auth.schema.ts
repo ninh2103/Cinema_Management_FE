@@ -3,8 +3,8 @@ import z from 'zod'
 
 export const LoginBody = z
   .object({
-    email: z.string().email(),
-    password: z.string().min(6).max(100)
+    Email: z.string().email(),
+    Password: z.string().min(6).max(100)
   })
   .strict()
 
@@ -12,16 +12,19 @@ export type LoginBodyType = z.TypeOf<typeof LoginBody>
 
 export const LoginRes = z.object({
   data: z.object({
-    accessToken: z.string(),
-    refreshToken: z.string(),
-    account: z.object({
-      id: z.number(),
-      name: z.string(),
+    access_token: z.string(),
+    refresh_token: z.string(),
+    user: z.object({
+      id: z.string(), // ID là chuỗi
+      fullname: z.string(), // Đổi từ name thành fullname
       email: z.string(),
-      role: z.enum([Role.Owner, Role.Employee])
+      role: z.object({
+        Name: z.enum([Role.Owner, Role.Employee, Role.Customer]) // Đổi role thành object với Name
+      })
     })
   }),
-  message: z.string()
+  message: z.string(),
+  statusCode: z.number() // Thêm statusCode nếu cần
 })
 
 export type LoginResType = z.TypeOf<typeof LoginRes>
@@ -36,8 +39,8 @@ export type RefreshTokenBodyType = z.TypeOf<typeof RefreshTokenBody>
 
 export const RefreshTokenRes = z.object({
   data: z.object({
-    accessToken: z.string(),
-    refreshToken: z.string()
+    access_token: z.string(),
+    refresh_token: z.string()
   }),
   message: z.string()
 })

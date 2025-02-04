@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 export default function SeatSelection() {
   const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i)) // Hàng A -> L
   const columns = Array.from({ length: 12 }, (_, i) => i + 1) // Số 1 -> 12
+
+  const [selectedSeats, setSelectedSeats] = React.useState<string[]>([])
+
+  // Xử lý khi người dùng bấm vào ghế
+  const handleSeatClick = (seat: string) => {
+    setSelectedSeats((prev) => (prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]))
+  }
 
   return (
     <div className='p-4 bg-gray-100 rounded-lg'>
@@ -33,14 +40,22 @@ export default function SeatSelection() {
                 {columns
                   .slice()
                   .reverse()
-                  .map((col) => (
-                    <button
-                      key={`${row}-${col}`}
-                      className='w-8 h-8 rounded border text-black border-gray-400 text-center hover:bg-orange-500 hover:text-white transition'
-                    >
-                      {col}
-                    </button>
-                  ))}
+                  .map((col) => {
+                    const seat = `${row}${col}` // Tên ghế
+                    const isSelected = selectedSeats.includes(seat) // Kiểm tra ghế đã chọn
+
+                    return (
+                      <button
+                        key={seat}
+                        onClick={() => handleSeatClick(seat)} // Xử lý bấm vào ghế
+                        className={`w-8 h-8 rounded border text-black text-center transition ${
+                          isSelected ? 'bg-orange-500 text-white' : 'border-gray-400 hover:bg-orange-300'
+                        }`}
+                      >
+                        {col}
+                      </button>
+                    )
+                  })}
 
                 {/* Chữ hàng bên phải */}
                 <div key={`right-${row}`} className=' text-black flex items-center justify-center font-bold'>
@@ -65,6 +80,22 @@ export default function SeatSelection() {
           <div className='w-4 h-4 border border-gray-400'></div> Ghế đơn
         </div>
       </div>
+
+      {/* Danh sách ghế đã chọn */}
+      {/* <div className='mt-4 text-black'>
+        <h3 className='font-semibold'>Ghế đã chọn:</h3>
+        <div className='mt-2'>
+          {selectedSeats.length > 0 ? (
+            <ul className='list-disc list-inside'>
+              {selectedSeats.map((seat) => (
+                <li key={seat}>{seat}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>Chưa có ghế nào được chọn.</p>
+          )}
+        </div>
+      </div> */}
     </div>
   )
 }
